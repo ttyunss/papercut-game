@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>纸上生花 · 剪纸拼图</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="app">
+  <header id="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">✂</span>
+      <div class="brand-text">
+        <h1>纸上生花</h1>
+        <p>传统剪纸 · 拼图小游戏</p>
+      </div>
+    </div>
+    <div class="top-actions">
+      <button id="btn-help" class="icon-btn" title="玩法说明">?</button>
+      <button id="btn-sound" class="icon-btn" title="声音开关">♪</button>
+    </div>
+  </header>
+
+  <main id="stage">
+    <!-- 主界面：关卡选择 -->
+    <section id="screen-home" class="screen active">
+      <div class="home-intro">
+        <h2>选一关，开始剪纸吧</h2>
+        <p>把下面的剪纸碎片，拼回窗花里去</p>
+      </div>
+      <div id="level-cards" class="level-cards"></div>
+      <p class="home-tip">拖动碎片放到虚线剪影上，也可以先点碎片、再点剪影</p>
+    </section>
+
+    <!-- 图案选择 -->
+    <section id="screen-patterns" class="screen">
+      <div class="screen-head">
+        <button id="btn-back-home" class="back-btn">‹ 返回</button>
+        <div id="level-title" class="level-title"></div>
+      </div>
+      <div id="pattern-cards" class="pattern-cards"></div>
+    </section>
+
+    <!-- 游戏页 -->
+    <section id="screen-play" class="screen">
+      <div id="hud">
+        <button id="btn-back-patterns" class="back-btn">‹ 返回</button>
+        <div class="hud-info">
+          <span id="hud-name" class="hud-name"></span>
+          <span id="hud-progress" class="hud-progress"></span>
+          <span id="hud-timer" class="hud-timer"></span>
+        </div>
+        <button id="btn-hint" class="hint-btn">提示</button>
+      </div>
+      <canvas id="game-canvas"></canvas>
+    </section>
+
+    <!-- 完成弹窗 -->
+    <div id="modal-done" class="modal hidden">
+      <div class="modal-card">
+        <div class="paper-corner tl"></div><div class="paper-corner tr"></div>
+        <div class="paper-corner bl"></div><div class="paper-corner br"></div>
+        <h2 id="done-title">作品完成</h2>
+        <div class="snapshot-wrap"><canvas id="snapshot" width="680" height="472"></canvas></div>
+        <div id="stars" class="stars"></div>
+        <p id="done-meta" class="done-meta"></p>
+        <div class="modal-actions">
+          <button id="btn-replay">再拼一次</button>
+          <button id="btn-next" class="primary">下一张</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 帮助弹窗 -->
+    <div id="modal-help" class="modal hidden">
+      <div class="modal-card help">
+        <div class="paper-corner tl"></div><div class="paper-corner tr"></div>
+        <div class="paper-corner bl"></div><div class="paper-corner br"></div>
+        <h2>玩法说明</h2>
+        <ul>
+          <li><b>拖动碎片</b>：按住下方托盘里的碎片，拖到剪纸板上虚线剪影的位置松手。</li>
+          <li><b>点选放置</b>：也可以先点一下碎片，再点一下它的剪影。</li>
+          <li>形状相同的碎片（比如花瓣）可以互相替换位置。</li>
+          <li>拿不准时点<b>「提示」</b>，会高亮一块碎片和它的位置（会影响星级）。</li>
+          <li>第一关碎片大、数量少；第二关有计时挑战；第三关不限时、慢慢玩。</li>
+        </ul>
+        <div class="modal-actions">
+          <button id="btn-help-close" class="primary">知道了</button>
+          <button id="btn-reset" class="reset-btn">清空进度</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+<script src="js/patterns.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>
