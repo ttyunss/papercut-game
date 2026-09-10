@@ -20,6 +20,37 @@ PC.PATTERNS.forEach(function (p) { byLevel[p.level].push(p); });
 [1, 2, 3].forEach(function (lv) { ok(byLevel[lv].length === 3, '第' + lv + '关有 3 个图案'); });
 
 var W = PC.BOARD.w, H = PC.BOARD.h;
+
+/* ---------- 1.5 折纸剪裁数据校验 ---------- */
+(function () {
+  if (!PC.FOLDCUT) return;
+  var P = PC.FOLDCUT.PAPER;
+  [2, 3].forEach(function (lv) {
+    var cfg = PC.FOLDCUT.levels[lv];
+    ok(!!cfg, '第' + lv + '关折剪配置存在');
+    if (!cfg) return;
+    var hasD = cfg.folds.indexOf('d') >= 0;
+    ok(cfg.folds.length === (lv === 2 ? 3 : 2), '第' + lv + '关折数正确(' + cfg.folds.join(',') + ')');
+    ok(cfg.tol > 0, '第' + lv + '关容差 ' + cfg.tol);
+    ok(cfg.lines.length >= 5, '第' + lv + '关剪裁线 ' + cfg.lines.length + ' 条');
+    var bad = 0, closed = 0;
+    cfg.lines.forEach(function (L) {
+      if (!L.pts || L.pts.length < 2) { bad++; return; }
+      if (L.closed) closed++;
+      L.pts.forEach(function (pt) {
+        var x = pt[0], y = pt[1];
+        var inRect = x >= 0 && x <= P && y >= 0 && y <= P;
+        if (hasD) {
+          if (L.closed && x + y > 235) bad++;      /* 剪孔必须落在楔形内 */
+          if (!L.closed && x + y > 465) bad++;     /* 边缘线允许贴对角折痕 */
+        } else if (!inRect) { bad++; }
+        if (x < -1 || x > P + 1 || y < -1 || y > P + 1) bad++;
+      });
+    });
+    ok(bad === 0, '第' + lv + '关剪裁线坐标合法（非法 ' + bad + '，闭合剪孔 ' + closed + '）');
+  });
+})();
+
 PC.PATTERNS.forEach(function (p) {
   var n = p.pieces.length;
   var range = p.level === 1 ? [4, 10] : (p.level === 2 ? [6, 14] : [4, 10]);
