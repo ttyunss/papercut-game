@@ -13,14 +13,22 @@
   var $ = function (id) { return document.getElementById(id); };
 
   var canvas = $('game-canvas'), ctx = canvas.getContext('2d');
+  var freeCanvas = $('free-canvas');
   var els = {
+    title: $('screen-title'), menu: $('screen-menu'), bye: $('screen-bye'),
+    story: $('screen-story'), free: $('screen-free'),
     home: $('screen-home'), patterns: $('screen-patterns'), play: $('screen-play'),
     levelCards: $('level-cards'), patternCards: $('pattern-cards'), levelTitle: $('level-title'),
     hudName: $('hud-name'), hudProgress: $('hud-progress'), hudTimer: $('hud-timer'),
     btnHint: $('btn-hint'), modalDone: $('modal-done'), doneTitle: $('done-title'),
     snapshot: $('snapshot'), stars: $('stars'), doneMeta: $('done-meta'),
-    modalHelp: $('modal-help'), btnSound: $('btn-sound')
+    modalHelp: $('modal-help'), btnSound: $('btn-sound'),
+    cutToolbar: $('cut-toolbar'), cutPhaseLabel: $('cut-phase-label'), btnCutNext: $('btn-cut-next'),
+    menuProgress: $('menu-progress')
   };
+
+  /* 折纸剪裁引擎实例（二、三关）与自由剪纸实例 */
+  var cutplay = null, freecut = null;
 
   /* ---------- 工具 ---------- */
   function now() { return performance.now(); }
@@ -85,11 +93,12 @@
 
   /* ---------- 全局状态 ---------- */
   var G = {
-    screen: 'home', level: 1, pattern: null, pieces: [], trayOrder: [],
+    screen: 'title', level: 1, pattern: null, pieces: [], trayOrder: [],
     placedCount: 0, selected: null, drag: null,
     hints: 0, mistakes: 0, startT: 0, elapsed: 0, timerId: 0,
     hintPiece: null, hintUntil: 0,
-    particles: [], finished: false, previewMode: false
+    particles: [], finished: false, previewMode: false,
+    playMode: 'puzzle'   /* 'puzzle'(第一关拼图) | 'cut'(二、三关折剪) */
   };
 
   /* ---------- 布局 ---------- */
@@ -118,6 +127,8 @@
 
   /* ---------- 开局 ---------- */
   function startPattern(level, pattern) {
+    if (level >= 2) { startCutLevel(level); return; }
+    G.playMode = 'puzzle';
     G.level = level; G.pattern = pattern;
     G.finished = false;
     G.pieces = pattern.pieces.map(function (def) {
@@ -139,6 +150,93 @@
     updateHud();
     startTimer();
     if (!G.previewMode) AUD.startBGM(level);
+  }
+
+  /* ---------- 折纸剪裁关（二、三关） ---------- */
+  function startCutLevel(level) {
+    G.playMode = 'cut';
+    G.level = level;
+    G.pattern = { name: PC.LEVELS[level - 1].name };
+    G.finished = false;
+    document.body.dataset.level = level;
+    if (!cutplay) cutplay = new global.CutPlay(canvas, {
+      onFolded: function () { updateCutPhase(); },
+      onAllCut: function () { updateCutPhase(); },
+      onUnfolded: function (cp) { finishCutLevel(cp); }
+    });
+    cutplay.start(level);
+    els.hudName.textContent = '第' + level + '关 · ' + PC.LEVELS[level - 1].name + ' · 剪纸窗花';
+    els.hudProgress.textContent = '';
+    els.hudTimer.classList.add('hidden');
+    G.startT = now();
+    show('play');
+    cutplay.layout();
+    updateCutPhase();
+    if (!G.previewMode) AUD.startBGM(level);
+  }
+
+  function updateCutPhase() {
+    var label = '';
+    if (cutplay.state === 'fold') {
+      label = '第 ① 步 · 折纸：点击虚线折痕，共 ' + cutplay.cfg.folds.length + ' 折';
+    } else if (cutplay.state === 'cut') {
+      var total = cutplay.lines.length;
+      var done = cutplay.lines.filter(function (L) { return L.cut; }).length;
+      label = '第 ② 步 · 剪纸：按住剪刀沿虚线剪（' + done + '/' + total + ' 条）';
+    } else {
+      label = '第 ③ 步 · 欣赏你的窗花';
+    }
+    els.cutPhaseLabel.textContent = label;
+    els.btnCutNext.textContent = cutplay.state === 'unfold' ? '完成'
+      : cutplay.state === 'fold' ? '跳过折纸' : '按住剪刀开剪';
+    els.btnCutNext.disabled = cutplay.state === 'cut';
+  }
+
+  els.btnCutNext.addEventListener('click', function () {
+    if (!cutplay) return;
+    if (cutplay.state === 'fold') {
+      cutplay.foldIdx = cutplay.cfg.folds.length;
+      cutplay.foldAnim = null;
+      cutplay.state = 'cut';
+      AUD.SFX.fold();
+      updateCutPhase();
+    } else if (cutplay.state === 'unfold') {
+      finishCutLevel(cutplay);
+    }
+  });
+
+  function finishCutLevel(cp) {
+    if (G.finished) return;
+    G.finished = true;
+    G.elapsed = now() - G.startT;
+    AUD.stopBGM();
+    AUD.SFX.win();
+    var stars = cp.stars();
+    var rec = save['CUT-L' + G.level] || {};
+    rec.stars = Math.max(rec.stars || 0, stars);
+    save['CUT-L' + G.level] = rec;
+    storeSave();
+    setTimeout(function () {
+      els.doneTitle.textContent = G.level === 2 ? '窗花绽放！' : '岁月静好 · 完成';
+      /* 快照: 展开成品 */
+      var sc = els.snapshot;
+      sc.width = 680; sc.height = 472;
+      var c2 = sc.getContext('2d');
+      c2.clearRect(0, 0, sc.width, sc.height);
+      if (cp.result) {
+        var size = Math.min(sc.width, sc.height) * 0.94;
+        c2.drawImage(cp.result, (sc.width - size) / 2, (sc.height - size) / 2, size, size);
+      }
+      var html = '';
+      for (var i = 0; i < 3; i++) html += '<span class="' + (i < stars ? 's-full' : 's-empty') + '">★</span>';
+      els.stars.innerHTML = html;
+      els.doneMeta.textContent = '偏离虚线 ' + cp.misses + ' 次 · ' +
+        (stars === 3 ? '刀工精准，像老艺人！' : stars === 2 ? '手很稳，窗花很漂亮！' : '慢慢来，窗花已经成形');
+      els.modalDone.classList.remove('hidden');
+      for (var j = 0; j < stars; j++) {
+        (function (idx) { setTimeout(function () { AUD.SFX.star(idx); }, 200 + idx * 230); })(j);
+      }
+    }, 900);
   }
 
   /* ---------- 计时(仅第二关) ---------- */
@@ -527,7 +625,7 @@
     return { x: e.clientX - r.left, y: e.clientY - r.top };
   }
   canvas.addEventListener('pointerdown', function (e) {
-    if (G.screen !== 'play' || G.finished) return;
+    if (G.screen !== 'play' || G.playMode !== 'puzzle' || G.finished) return;
     var p = posOf(e);
     var tp = trayPieceAt(p);
     if (tp) {
@@ -552,6 +650,7 @@
     }
   });
   canvas.addEventListener('pointermove', function (e) {
+    if (G.playMode !== 'puzzle') return;
     var p = posOf(e);
     if (G.drag) {
       if (Math.hypot(p.x - G.drag.sx, p.y - G.drag.sy) > 7) G.drag.moved = true;
@@ -578,11 +677,22 @@
   canvas.addEventListener('pointercancel', endDrag);
 
   /* ---------- 屏幕切换 ---------- */
+  var SCREENS = ['title', 'menu', 'story', 'home', 'patterns', 'play', 'free', 'bye'];
   function show(name) {
     G.screen = name;
+    els.title.classList.toggle('active', name === 'title');
+    els.menu.classList.toggle('active', name === 'menu');
+    els.story.classList.toggle('active', name === 'story');
     els.home.classList.toggle('active', name === 'home');
     els.patterns.classList.toggle('active', name === 'patterns');
     els.play.classList.toggle('active', name === 'play');
+    els.free.classList.toggle('active', name === 'free');
+    els.bye.classList.toggle('active', name === 'bye');
+    if (name === 'play') {
+      els.cutToolbar.classList.toggle('hidden', G.playMode !== 'cut');
+    } else {
+      els.cutToolbar.classList.add('hidden');
+    }
     if (name !== 'play') { AUD.stopBGM(); stopTimer(); }
   }
 
@@ -612,7 +722,12 @@
     PC.LEVELS.forEach(function (lv) {
       var pats = PC.PATTERNS.filter(function (p) { return p.level === lv.level; });
       var done = pats.filter(function (p) { return save[p.id] && save[p.id].stars > 0; }).length;
+      if (lv.level >= 2) {
+        var cutRec = save['CUT-L' + lv.level];
+        if (cutRec && cutRec.stars > 0) done = 1;
+      }
       var dots = lv.level === 2 ? '●●●' : lv.level === 3 ? '●●○' : '●○○';
+      var total = lv.level === 1 ? pats.length : 1;
       var card = document.createElement('div');
       card.className = 'level-card lv' + lv.level;
       card.innerHTML =
@@ -621,12 +736,17 @@
         '<p class="lv-desc">' + lv.desc + '</p>' +
         '<div class="lv-preview"><canvas width="450" height="320"></canvas></div>' +
         '<div class="lv-meta"><span class="lv-dots">' + dots + '</span>' +
-        '<span class="lv-prog">' + (done > 0 ? '已完成 ' + done + '/' + pats.length : '尚未开始') + '</span></div>';
+        '<span class="lv-prog">' + (done > 0 ? '已完成 ' + done + '/' + total : '尚未开始') + '</span></div>';
       renderArtwork(card.querySelector('canvas'), pats[lv.previewIndex]);
       card.addEventListener('click', function () {
         AUD.SFX.click();
-        buildPatterns(lv.level);
-        show('patterns');
+        if (lv.level >= 2) {
+          G.previewMode = false;
+          startCutLevel(lv.level);
+        } else {
+          buildPatterns(lv.level);
+          show('patterns');
+        }
       });
       els.levelCards.appendChild(card);
     });
@@ -666,12 +786,21 @@
   $('btn-replay').addEventListener('click', function () {
     els.modalDone.classList.add('hidden');
     AUD.SFX.click();
+    if (G.playMode === 'cut') {
+      G.previewMode = false;
+      startCutLevel(G.level);
+      return;
+    }
     G.previewMode = false;
     startPattern(G.level, G.pattern);
   });
   $('btn-next').addEventListener('click', function () {
     els.modalDone.classList.add('hidden');
     AUD.SFX.click();
+    if (G.playMode === 'cut') {
+      show('home');
+      return;
+    }
     var list = patternListOf(G.level);
     var idx = list.indexOf(G.pattern);
     if (idx >= 0 && idx + 1 < list.length) {
@@ -687,6 +816,7 @@
   $('btn-back-home').addEventListener('click', function () { AUD.SFX.click(); show('home'); });
   $('btn-back-patterns').addEventListener('click', function () {
     AUD.SFX.click();
+    if (G.playMode === 'cut') { show('home'); return; }
     buildPatterns(G.level);
     show('patterns');
   });
@@ -704,8 +834,9 @@
       save = {};
       storeSave();
       buildHome();
+      updateMenuProgress();
       els.modalHelp.classList.add('hidden');
-      show('home');
+      show('title');
     }
   });
   function updateSoundBtn() { els.btnSound.classList.toggle('muted', AUD.isMuted()); }
@@ -723,10 +854,19 @@
   function frame(t) {
     requestAnimationFrame(frame);
     DT = clamp(t - lastT, 8, 40); lastT = t;
-    if (G.screen !== 'play') return;
-    if (canvas.clientWidth !== view.w || canvas.clientHeight !== view.h) layout();
-    if (!view.board) return;
-    draw();
+    if (G.screen === 'play') {
+      if (G.playMode === 'cut' && cutplay) {
+        if (canvas.clientWidth !== cutplay.V.w || canvas.clientHeight !== cutplay.V.h) cutplay.layout();
+        cutplay.frame(DT);
+      } else {
+        if (canvas.clientWidth !== view.w || canvas.clientHeight !== view.h) layout();
+        if (!view.board) return;
+        draw();
+      }
+    } else if (G.screen === 'free' && freecut) {
+      if (freeCanvas.clientWidth !== freecut.V.w || freeCanvas.clientHeight !== freecut.V.h) freecut.layout();
+      freecut.frame(DT);
+    }
   }
 
   /* ---------- 预览模式(自动化截图用) ---------- */
@@ -757,12 +897,110 @@
     }, 320);
   }
 
+  /* ---------- 开始界面 / 主菜单 / 故事 / 自由剪纸 / 退出 ---------- */
+  function updateMenuProgress() {
+    var total = PC.PATTERNS.length + 2;   /* 9 拼图图案 + 2 折剪关 */
+    var done = 0;
+    PC.PATTERNS.forEach(function (p) { if (save[p.id] && save[p.id].stars > 0) done++; });
+    [2, 3].forEach(function (lv) { if (save['CUT-L' + lv] && save['CUT-L' + lv].stars > 0) done++; });
+    els.menuProgress.textContent = done > 0
+      ? '进度：已点亮 ' + done + ' / ' + total + ' 个作品 ★'
+      : '还没有作品，从「故事背景」开始了解剪纸吧';
+  }
+
+  $('btn-enter').addEventListener('click', function () {
+    AUD.SFX.click();
+    updateMenuProgress();
+    show('menu');
+  });
+  $('menu-story').addEventListener('click', function () {
+    AUD.SFX.click();
+    show('story');
+  });
+  $('menu-play').addEventListener('click', function () {
+    AUD.SFX.click();
+    show('home');
+  });
+  $('menu-free').addEventListener('click', function () {
+    AUD.SFX.click();
+    enterFreeCut();
+  });
+  $('menu-exit').addEventListener('click', function () {
+    AUD.SFX.click();
+    AUD.stopBGM();
+    show('bye');
+  });
+  $('btn-back-menu1').addEventListener('click', function () { AUD.SFX.click(); show('menu'); });
+  $('btn-back-menu2').addEventListener('click', function () { AUD.SFX.click(); show('menu'); });
+  $('btn-story-start').addEventListener('click', function () {
+    AUD.SFX.click();
+    show('home');
+  });
+  $('btn-bye-close').addEventListener('click', function () {
+    AUD.SFX.click();
+    window.close();
+    setTimeout(function () {
+      els.bye.querySelector('.bye-text').innerHTML =
+        '浏览器不允许网页自动关闭<br>请直接关闭这个标签页，或点「再玩一会儿」';
+    }, 200);
+  });
+  $('btn-bye-back').addEventListener('click', function () {
+    AUD.SFX.click();
+    updateMenuProgress();
+    show('menu');
+  });
+  $('btn-home').addEventListener('click', function () {
+    AUD.SFX.click();
+    AUD.stopBGM();
+    updateMenuProgress();
+    show('menu');
+  });
+
+  /* ---------- 自由剪纸 ---------- */
+  function enterFreeCut() {
+    document.body.dataset.level = '';
+    if (!freecut) {
+      freecut = new global.FreeCut(freeCanvas);
+      bindFreeCutUI();
+    }
+    show('free');
+    freecut.layout();
+    freecut.frame(16);
+  }
+  function bindFreeCutUI() {
+    document.querySelectorAll('.fold-btn').forEach(function (b) {
+      b.addEventListener('click', function () {
+        if (freecut.addFold(b.dataset.fold)) updateFreeUI();
+      });
+    });
+    $('btn-tool-cut').addEventListener('click', function () {
+      freecut.tool = 'cut'; updateFreeUI();
+    });
+    $('btn-tool-punch').addEventListener('click', function () {
+      freecut.tool = 'punch'; updateFreeUI();
+    });
+    $('btn-undo').addEventListener('click', function () { freecut.undo(); });
+    $('btn-unfold').addEventListener('click', function () {
+      if (freecut.unfold()) updateFreeUI();
+    });
+    $('btn-new-paper').addEventListener('click', function () {
+      freecut.reset(); updateFreeUI();
+    });
+    $('btn-save-art').addEventListener('click', function () { freecut.saveImage(); });
+  }
+  function updateFreeUI() {
+    $('btn-tool-cut').classList.toggle('active', freecut.tool === 'cut');
+    $('btn-tool-punch').classList.toggle('active', freecut.tool === 'punch');
+    $('btn-unfold').disabled = freecut.unfolded || !freecut.strokes.length;
+  }
+
   /* ---------- 启动 ---------- */
   function init() {
     updateSoundBtn();
     document.addEventListener('pointerdown', function () { AUD.SFX.unlock(); },
       { once: true, capture: true });
     buildHome();
+    drawStoryArt();
 
     var seen = false;
     try { seen = localStorage.getItem('papercut_seen') === '1'; } catch (e) { /* 忽略 */ }
@@ -776,6 +1014,10 @@
     var mPrev = h.match(/preview=([\w\u4e00-\u9fa5-]+)/);
     var mAuto = h.match(/auto=([\w\u4e00-\u9fa5-]+)/);
     var mPat = h.match(/patterns=(\d)/);
+    var mCut = h.match(/cut=(\d)(?::(\w+))?/);
+    var mFree = h.match(/free/);
+    var mMenu = h.match(/menu/);
+    var mStory = h.match(/story/);
     if (mPrev || mAuto) {
       var key = (mAuto || mPrev)[1];
       var pt = PC.PATTERNS.filter(function (x) { return x.id === key || x.name === key; })[0];
@@ -786,6 +1028,19 @@
         return;
       }
     }
+    if (mCut) {
+      var lvCut = parseInt(mCut[1], 10);
+      if (lvCut >= 2 && lvCut <= 3) {
+        G.previewMode = !!mCut[2];
+        startCutLevel(lvCut);
+        if (mCut[2]) cutplay.debugSkip(mCut[2]);
+        requestAnimationFrame(frame);
+        return;
+      }
+    }
+    if (mFree) { enterFreeCut(); requestAnimationFrame(frame); return; }
+    if (mMenu) { updateMenuProgress(); show('menu'); requestAnimationFrame(frame); return; }
+    if (mStory) { show('story'); requestAnimationFrame(frame); return; }
     if (mPat) {
       var lv = parseInt(mPat[1], 10);
       if (lv >= 1 && lv <= 3) {
@@ -795,8 +1050,33 @@
         return;
       }
     }
-    show('home');
+    show('title');
     requestAnimationFrame(frame);
+  }
+
+  /* ---------- 故事页配图 ---------- */
+  function drawStoryArt() {
+    [['story-art-1', 'L2-2'], ['story-art-2', 'L1-1'], ['story-art-3', 'L3-2']].forEach(function (pair) {
+      var cnv = $(pair[0]);
+      if (!cnv) return;
+      var pat = PC.PATTERNS.filter(function (x) { return x.id === pair[1]; })[0];
+      if (!pat) return;
+      var c2 = cnv.getContext('2d');
+      c2.clearRect(0, 0, cnv.width, cnv.height);
+      var s = Math.min(cnv.width / BW, cnv.height / BH) * 0.92;
+      c2.save();
+      c2.translate((cnv.width - BW * s) / 2, (cnv.height - BH * s) / 2);
+      c2.scale(s, s);
+      pat.pieces.forEach(function (def) {
+        var p = buildPath(def.cmds);
+        c2.fillStyle = def.color;
+        c2.fill(p, 'evenodd');
+        c2.lineWidth = 2.2 / s;
+        c2.strokeStyle = shade(def.color, 0.72);
+        c2.stroke(p);
+      });
+      c2.restore();
+    });
   }
   init();
 })(window);
