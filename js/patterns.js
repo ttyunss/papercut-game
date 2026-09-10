@@ -129,6 +129,62 @@
     return XF(local, { dx: cx, dy: cy, rot: angDeg || 0 });
   }
 
+  /* ---------- 折纸剪裁数据辅助 ---------- */
+  /* 圆弧采样点（角度制，0=正右，顺时针为正） */
+  function ARC(cx, cy, r, a0, a1, n) {
+    var pts = [];
+    for (var i = 0; i <= n; i++) {
+      var a = (a0 + (a1 - a0) * i / n) * D2R;
+      pts.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]);
+    }
+    return pts;
+  }
+  /* 圆形采样点（closed=true 为闭合剪孔） */
+  function CIRCPT(cx, cy, r, n) {
+    var pts = [];
+    for (var i = 0; i < n; i++) {
+      var a = TAU * i / n;
+      pts.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]);
+    }
+    return pts;
+  }
+
+  /* ============================================================
+   * 折纸剪裁数据（第二关 / 第三关）
+   * 纸张局部坐标：正方形 0..460 × 0..460，原点左上
+   * 折法: v=竖对折(右折向左) h=横对折(下折向上) d=对角折(沿x+y=230)
+   * lines: 剪裁虚线（点折线，在折后楔形上）；closed=true 为剪孔
+   * ============================================================ */
+  var FOLDCUT = {
+    PAPER: 460,
+    levels: {
+      2: {
+        folds: ['v', 'h', 'd'],
+        tol: 16,
+        lines: [
+          { pts: ARC(230, 230, 228, 180, 270, 10) },
+          { pts: [[26, 0], [11, 11], [0, 26]] },
+          { pts: [[0, 78], [16, 94], [0, 110]] },
+          { pts: [[78, 0], [94, 16], [110, 0]] },
+          { pts: CIRCPT(52, 140, 13, 14), closed: true },
+          { pts: CIRCPT(140, 52, 13, 14), closed: true }
+        ]
+      },
+      3: {
+        folds: ['v', 'h'],
+        tol: 26,
+        lines: [
+          { pts: ARC(230, 230, 190, 180, 270, 10) },
+          { pts: [[44, 0], [22, 22], [0, 44]] },
+          { pts: [[84, 0], [104, 18], [124, 0]] },
+          { pts: [[0, 84], [18, 104], [0, 124]] },
+          { pts: CIRCPT(56, 56, 14, 14), closed: true },
+          { pts: ARC(230, 230, 120, 187, 263, 8) }
+        ]
+      }
+    }
+  };
+
   /* 灯笼椭圆四分之一楔形（含中间刀口镂空） */
   function LANTERN_QUAD(a0, a1) {
     var cx = 450, cy = 335, rx = 150, ry = 122, N = 18, c = [];
@@ -351,10 +407,11 @@
     BOARD: { w: 900, h: 640 },
     COL: COL,
     LEVELS: [
-      { level: 1, name: '童心巧手', tag: '儿童益智', desc: '碎片大、数量少，五颜六色最好玩', previewIndex: 0 },
-      { level: 2, name: '指尖飞花', tag: '青年普通', desc: '碎片更多更精细，来一场计时挑战', previewIndex: 1 },
-      { level: 3, name: '岁月静好', tag: '老年闲玩', desc: '大块传统窗花，不限时间慢慢拼', previewIndex: 1 }
+      { level: 1, name: '童心巧手', tag: '儿童益智', desc: '萌新拼图玩法：碎片大、数量少，五颜六色最好玩', previewIndex: 0 },
+      { level: 2, name: '指尖飞花', tag: '青年普通', desc: '折三折，沿虚线剪出精细窗花', previewIndex: 1 },
+      { level: 3, name: '岁月静好', tag: '老年闲玩', desc: '折两折慢慢剪，大线条不限时', previewIndex: 1 }
     ],
-    PATTERNS: PATTERNS
+    PATTERNS: PATTERNS,
+    FOLDCUT: FOLDCUT
   };
 })(typeof window !== 'undefined' ? window : globalThis);
