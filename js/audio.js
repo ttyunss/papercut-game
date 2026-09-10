@@ -74,7 +74,47 @@
       seq.forEach(function (f, i) { pluck(f, i * 0.095, 0.1); });
       pluck(1318.5, seq.length * 0.095, 0.08);
     },
-    star: function (i) { tone(1046.5 + i * 197, 0.16, { type: 'sine', gain: 0.06 }); }
+    star: function (i) { tone(1046.5 + i * 197, 0.16, { type: 'sine', gain: 0.06 }); },
+
+    /* ---- 折纸剪裁音效 ---- */
+    lastSnip: 0,
+    snip: function () {
+      /* 剪刀"嚓"：带通滤波短噪声脉冲（节流 90ms） */
+      var c = ensure();
+      if (!c) return;
+      var t = c.currentTime;
+      if (t - SFX.lastSnip < 0.09) return;
+      SFX.lastSnip = t;
+      var len = Math.floor(c.sampleRate * 0.05);
+      var buf = c.createBuffer(1, len, c.sampleRate);
+      var d = buf.getChannelData(0);
+      for (var i = 0; i < len; i++) {
+        var env = i < len * 0.15 ? i / (len * 0.15) : 1 - (i - len * 0.15) / (len * 0.85);
+        d[i] = (Math.random() * 2 - 1) * env;
+      }
+      var src = c.createBufferSource(); src.buffer = buf;
+      var bp = c.createBiquadFilter();
+      bp.type = 'bandpass'; bp.frequency.value = 2600; bp.Q.value = 1.2;
+      var g = c.createGain();
+      g.gain.setValueAtTime(0.16, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
+      src.connect(bp); bp.connect(g); g.connect(c.destination);
+      src.start(t); src.stop(t + 0.06);
+    },
+    fold: function () {
+      /* 折纸低扫音 */
+      tone(320, 0.3, { type: 'sine', gain: 0.07, slide: 150, attack: 0.05 });
+    },
+    punch: function () {
+      /* 戳孔：短促顿音 */
+      tone(180, 0.09, { type: 'square', gain: 0.06, slide: 120 });
+    },
+    bloom: function () {
+      /* 展开：上行三连拨弦 */
+      pluck(392, 0, 0.09);
+      pluck(523.25, 0.1, 0.09);
+      pluck(659.25, 0.2, 0.11);
+    }
   };
 
   /* ---------- 背景拨弦（五声音阶固定旋律 + 休止） ---------- */
