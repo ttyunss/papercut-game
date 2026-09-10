@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>纸上生花 · 剪纸拼图</title>
+<title>非遗剪纸小游戏 · 纸上生花</title>
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -13,21 +13,107 @@
       <span class="brand-mark" aria-hidden="true">✂</span>
       <div class="brand-text">
         <h1>纸上生花</h1>
-        <p>传统剪纸 · 拼图小游戏</p>
+        <p>非遗剪纸小游戏</p>
       </div>
     </div>
     <div class="top-actions">
+      <button id="btn-home" class="icon-btn" title="主菜单">⌂</button>
       <button id="btn-help" class="icon-btn" title="玩法说明">?</button>
       <button id="btn-sound" class="icon-btn" title="声音开关">♪</button>
     </div>
   </header>
 
   <main id="stage">
-    <!-- 主界面：关卡选择 -->
-    <section id="screen-home" class="screen active">
+    <!-- 开始界面（标题页） -->
+    <section id="screen-title" class="screen active">
+      <div class="title-wrap">
+        <div class="title-deco left" aria-hidden="true"></div>
+        <div class="title-card">
+          <div class="paper-corner tl"></div><div class="paper-corner tr"></div>
+          <div class="paper-corner bl"></div><div class="paper-corner br"></div>
+          <p class="title-eyebrow">中国非物质文化遗产</p>
+          <h1 class="title-main">非遗剪纸小游戏</h1>
+          <p class="title-sub">一剪之巧夺神功 · 美在民间永不朽</p>
+          <button id="btn-enter" class="title-enter">进 入 游 戏</button>
+        </div>
+        <div class="title-deco right" aria-hidden="true"></div>
+      </div>
+    </section>
+
+    <!-- 主菜单 -->
+    <section id="screen-menu" class="screen">
+      <div class="menu-wrap">
+        <h2 class="menu-heading">主 菜 单</h2>
+        <div class="menu-grid">
+          <button id="menu-story" class="menu-btn story">
+            <span class="menu-ico">📖</span>
+            <span class="menu-name">故事背景</span>
+            <span class="menu-tip">了解非遗剪纸的前世今生</span>
+          </button>
+          <button id="menu-play" class="menu-btn play">
+            <span class="menu-ico">✂</span>
+            <span class="menu-name">开始游戏</span>
+            <span class="menu-tip">儿童 · 青年 · 老年 三大难度关卡</span>
+          </button>
+          <button id="menu-free" class="menu-btn free">
+            <span class="menu-ico">🪟</span>
+            <span class="menu-name">自由剪纸</span>
+            <span class="menu-tip">自由折纸，剪出你自己的窗花</span>
+          </button>
+          <button id="menu-exit" class="menu-btn exit">
+            <span class="menu-ico">🚪</span>
+            <span class="menu-name">退出游戏</span>
+            <span class="menu-tip">保存进度，下次再见</span>
+          </button>
+        </div>
+        <p id="menu-progress" class="menu-progress"></p>
+      </div>
+    </section>
+
+    <!-- 故事背景（非遗科普） -->
+    <section id="screen-story" class="screen">
+      <div class="screen-head">
+        <button id="btn-back-menu1" class="back-btn">‹ 返回</button>
+        <div class="level-title">故事背景 <small>非遗剪纸 · 指尖上的中国</small></div>
+      </div>
+      <div class="story-wrap">
+        <div class="story-card">
+          <div class="paper-corner tl"></div><div class="paper-corner tr"></div>
+          <div class="paper-corner bl"></div><div class="paper-corner br"></div>
+          <h3>一把剪刀，一张红纸，千年传承</h3>
+          <p>剪纸，是用剪刀或刻刀在纸上剪刻花纹的传统民间艺术。早在<b>南北朝</b>时期
+          （公元 386—581 年），人们就在新疆吐鲁番的墓葬中留下了至今可见的团花剪纸，
+          距今已有一千五百多年历史。</p>
+          <p>2009 年，中国剪纸被联合国教科文组织列入<b>《人类非物质文化遗产代表作名录》</b>，
+          成为全世界共同守护的文化记忆。</p>
+          <div class="story-gallery">
+            <div class="story-item"><canvas id="story-art-1" width="200" height="200"></canvas><p>对马团花（南北朝 · 最早剪纸实物之一）</p></div>
+            <div class="story-item"><canvas id="story-art-2" width="200" height="200"></canvas><p>窗花 · 团花（对称之美）</p></div>
+            <div class="story-item"><canvas id="story-art-3" width="200" height="200"></canvas><p>福字窗花（民俗寓意）</p></div>
+          </div>
+          <h3>南北方剪纸，各有风韵</h3>
+          <p>北方剪纸粗犷质朴、浑厚大气，代表有<b>陕西剪纸</b>、<b>河北蔚县点彩刻纸</b>；
+          南方剪纸细腻秀丽、玲珑剔透，代表有<b>扬州剪纸</b>、<b>广东佛山铜凿剪纸</b>。
+          一方水土，养一方剪刀。</p>
+          <h3>剪的是纸，祈的是福</h3>
+          <p>逢年过节，人们把窗花贴在窗上、门楣上：「福」到我家、「年年有余」、仙桃献寿……
+          每一幅窗花，都是一句无声的祝福。折一折、剪一剪，展开的那一刻，
+          <b>对称的纹样里藏着中国人对团圆美满的祈愿</b>。</p>
+          <h3>怎么玩？</h3>
+          <p>就像民间艺人那样：<b>先把红纸折起来，再沿虚线剪开，最后展开</b>——
+          一朵漂亮的窗花就出现在你眼前！</p>
+          <div class="story-actions">
+            <button id="btn-story-start" class="primary big">✂ 开 始 游 戏</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 关卡选择 -->
+    <section id="screen-home" class="screen">
       <div class="home-intro">
-        <h2>选一关，开始剪纸吧</h2>
-        <p>把下面的剪纸碎片，拼回窗花里去</p>
+        <h2>选一个难度，开始剪纸吧</h2>
+        <p>第一关是萌新拼图，第二、三关是真正的折纸剪纸</p>
       </div>
       <div id="level-cards" class="level-cards"></div>
       <p class="home-tip">拖动碎片放到虚线剪影上，也可以先点碎片、再点剪影</p>
@@ -42,7 +128,7 @@
       <div id="pattern-cards" class="pattern-cards"></div>
     </section>
 
-    <!-- 游戏页 -->
+    <!-- 游戏页（拼图 / 折纸剪裁共用画布） -->
     <section id="screen-play" class="screen">
       <div id="hud">
         <button id="btn-back-patterns" class="back-btn">‹ 返回</button>
@@ -54,6 +140,60 @@
         <button id="btn-hint" class="hint-btn">提示</button>
       </div>
       <canvas id="game-canvas"></canvas>
+      <div id="cut-toolbar" class="cut-toolbar hidden">
+        <span id="cut-phase-label" class="cut-phase-label"></span>
+        <button id="btn-cut-next" class="cut-btn primary">下一步</button>
+      </div>
+    </section>
+
+    <!-- 自由剪纸 -->
+    <section id="screen-free" class="screen">
+      <div class="screen-head">
+        <button id="btn-back-menu2" class="back-btn">‹ 主菜单</button>
+        <div class="level-title">自由剪纸 <small>折一折 · 剪一剪 · 展开看看</small></div>
+      </div>
+      <div class="free-wrap">
+        <div class="free-tools">
+          <div class="tool-group">
+            <p class="tool-title">① 折纸</p>
+            <button class="fold-btn" data-fold="v">对折 ▷ 左</button>
+            <button class="fold-btn" data-fold="h">对折 △ 上</button>
+            <button class="fold-btn" data-fold="d">对角折 ◣</button>
+          </div>
+          <div class="tool-group">
+            <p class="tool-title">② 剪刀</p>
+            <button id="btn-tool-cut" class="tool-btn active" title="按住拖动剪开">✂ 剪</button>
+            <button id="btn-tool-punch" class="tool-btn" title="点击戳孔">◉ 孔</button>
+            <button id="btn-undo" class="tool-btn" title="撤销一步">↶ 撤销</button>
+          </div>
+          <div class="tool-group">
+            <p class="tool-title">③ 展开</p>
+            <button id="btn-unfold" class="cut-btn">展开窗花</button>
+            <button id="btn-new-paper" class="tool-btn">换张红纸</button>
+            <button id="btn-save-art" class="tool-btn">保存图片</button>
+          </div>
+        </div>
+        <div class="free-canvas-wrap">
+          <canvas id="free-canvas"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- 告别页（退出游戏） -->
+    <section id="screen-bye" class="screen">
+      <div class="bye-wrap">
+        <div class="title-card small">
+          <div class="paper-corner tl"></div><div class="paper-corner tr"></div>
+          <div class="paper-corner bl"></div><div class="paper-corner br"></div>
+          <p class="bye-sym">❀ ✂ ❀</p>
+          <h2>再见，剪纸艺人</h2>
+          <p class="bye-text">你的进度已经保存好了<br>窗花常开，常来剪呀</p>
+          <div class="modal-actions">
+            <button id="btn-bye-close" class="primary">关闭页面</button>
+            <button id="btn-bye-back" class="primary">再玩一会儿</button>
+          </div>
+        </div>
+      </div>
     </section>
 
     <!-- 完成弹窗 -->
@@ -66,7 +206,7 @@
         <div id="stars" class="stars"></div>
         <p id="done-meta" class="done-meta"></p>
         <div class="modal-actions">
-          <button id="btn-replay">再拼一次</button>
+          <button id="btn-replay">再玩一次</button>
           <button id="btn-next" class="primary">下一张</button>
         </div>
       </div>
@@ -79,11 +219,11 @@
         <div class="paper-corner bl"></div><div class="paper-corner br"></div>
         <h2>玩法说明</h2>
         <ul>
-          <li><b>拖动碎片</b>：按住下方托盘里的碎片，拖到剪纸板上虚线剪影的位置松手。</li>
-          <li><b>点选放置</b>：也可以先点一下碎片，再点一下它的剪影。</li>
-          <li>形状相同的碎片（比如花瓣）可以互相替换位置。</li>
-          <li>拿不准时点<b>「提示」</b>，会高亮一块碎片和它的位置（会影响星级）。</li>
-          <li>第一关碎片大、数量少；第二关有计时挑战；第三关不限时、慢慢玩。</li>
+          <li><b>第一关 · 萌新拼图</b>：把碎片拖到虚线剪影上，也可以先点碎片再点剪影，拼出完整图案。</li>
+          <li><b>第二、三关 · 折纸剪纸</b>：先点折痕把红纸折起来；再按住剪刀，沿虚线慢慢剪开；最后点「展开」看窗花绽放。</li>
+          <li>剪得越贴近虚线，星级越高；拿不准时点<b>「提示」</b>。</li>
+          <li><b>自由剪纸</b>：自己折纸、自己设计刀路，展开就是独一无二的作品，还能保存成图片。</li>
+          <li>第一关碎片大、数量少；第二关线条精细；第三关大线条不限时。</li>
         </ul>
         <div class="modal-actions">
           <button id="btn-help-close" class="primary">知道了</button>
@@ -95,6 +235,8 @@
 </div>
 <script src="js/patterns.js"></script>
 <script src="js/audio.js"></script>
+<script src="js/cutplay.js"></script>
+<script src="js/freecut.js"></script>
 <script src="js/game.js"></script>
 </body>
 </html>
