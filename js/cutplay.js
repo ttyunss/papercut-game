@@ -221,6 +221,7 @@
       AUD.SFX.snip();
       if (this.lines.every(function (L) { return L.cut; })) {
         this.state = 'unfold';
+        this.beginUnfold();
         this.host.onAllCut();
       }
     } else {
@@ -314,9 +315,10 @@
         cx.translate(0, k0 * mh * 2);
         cx.scale(1, -1);
       } else {
-        /* d 折: 折痕 x+y=230, 反射 (x,y)→(y,x), 即主对角线翻转 */
+        /* d 折: 折痕 x+y=230, 反射 (x,y)→(230-y, 230-x) */
         var md = 230;
-        cx.transform(0, 1, 1, 0, 0, 0);
+        cx.translate(k0 * md, k0 * md);
+        cx.transform(0, -1, -1, 0, 0, 0);
       }
       cx.drawImage(piece, 0, 0);
       cx.restore();
@@ -462,6 +464,7 @@
     ctx.restore();
 
     /* 提示文字（画布顶部, 不与纸重叠） */
+    var f = this.cfg.folds[this.foldIdx];
     ctx.save();
     ctx.fillStyle = 'rgba(74,28,20,0.8)';
     ctx.font = '18px KaiTi, STKaiti, serif';
