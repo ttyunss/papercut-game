@@ -151,7 +151,7 @@
     c.scale(k, k);
     c.fillStyle = '#c8341f';
     if (r.diag) {
-      var s = this.folds.indexOf('d') === 0 ? P : 230;
+      var s = r.x1;   /* region() 对角时已把 x1/y1 收敛为楔形直角边长 */
       c.beginPath(); c.moveTo(0, 0); c.lineTo(s, 0); c.lineTo(0, s); c.closePath(); c.fill();
     } else {
       c.fillRect(r.x0, r.y0, r.x1 - r.x0, r.y1 - r.y0);
@@ -191,14 +191,17 @@
       c2.drawImage(piece, 0, 0);
       c2.save();
       if (f === 'v') {
-        c2.translate(k * rb.x1 * 2, 0);
+        /* 折痕 x = rb.x1/2（该折发生时纸宽的一半）, 镜像轴即折痕 */
+        c2.translate(k * rb.x1, 0);
         c2.scale(-1, 1);
       } else if (f === 'h') {
-        c2.translate(0, k * rb.y1 * 2);
+        c2.translate(0, k * rb.y1);
         c2.scale(1, -1);
       } else {
-        /* 对角折: 折痕 x+y=s, 反射 (x,y)→(y,x)（主对角线翻转） */
-        c2.transform(0, 1, 1, 0, 0, 0);
+        /* 对角折: 折痕 x+y=s, 反射 (x,y)→(s-y, s-x) */
+        var sd = i === 0 ? P : rb.x1;
+        c2.translate(k * sd, k * sd);
+        c2.transform(0, -1, -1, 0, 0, 0);
       }
       c2.drawImage(piece, 0, 0);
       c2.restore();
